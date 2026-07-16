@@ -1,0 +1,3 @@
+# Install with: pip install -r requirements-optional.txt
+# Only needed if you set model.type = "lstm" in config.yaml
+torch>=2.2

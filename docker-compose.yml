@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  # One-shot: run the research pipeline (data -> features -> walk-forward -> backtest)
+  pipeline:
+    build: .
+    container_name: alpha_pipeline
+    command: python scripts/run_pipeline.py
+    volumes:
+      - ./data_cache:/app/data_cache
+      - ./artifacts:/app/artifacts
+      - ./config.yaml:/app/config.yaml
+
+  # Long-running: serve the Streamlit dashboard on localhost:8501
+  dashboard:
+    build: .
+    container_name: alpha_dashboard
+    command: streamlit run dashboard/app.py --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data_cache:/app/data_cache
+      - ./artifacts:/app/artifacts
+      - ./config.yaml:/app/config.yaml
+    depends_on:
+      - pipeline

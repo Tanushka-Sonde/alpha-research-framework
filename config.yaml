@@ -1,0 +1,77 @@
+# =============================================================================
+# Alpha Research Framework — central config
+# Change things here instead of hunting through code.
+# =============================================================================
+
+data:
+  tickers: ["AAPL", "MSFT", "SPY", "NVDA", "JPM"]
+  start_date: "2015-01-01"
+  end_date: null              # null = today
+  interval: "1d"
+  cache_dir: "data_cache"
+  use_synthetic_if_offline: true   # fallback so the repo runs even with no internet
+
+features:
+  return_horizons: [1, 5, 10, 21]        # lookback windows (days) for momentum features
+  vol_windows: [5, 10, 21, 63]           # rolling realized vol windows
+  rsi_window: 14
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  bollinger_window: 20
+  bollinger_std: 2.0
+  zscore_window: 21
+  volume_windows: [5, 21]
+
+label:
+  horizon: 5                  # predict forward return over next N days
+  target_type: "return"       # "return" (regression) or "direction" (classification)
+
+validation:
+  method: "purged_walk_forward"
+  n_splits: 6
+  min_train_size: 504         # ~2 years of trading days before first test fold
+  test_size: 63                # ~1 quarter per fold
+  embargo_days: 5              # extra buffer after test fold, blocks leakage back into next train
+  # purge = label horizon automatically, so overlapping labels can't leak across the train/test boundary
+
+model:
+  type: "lightgbm"             # "lightgbm" or "lstm"
+  lightgbm:
+    n_estimators: 400
+    learning_rate: 0.03
+    max_depth: 5
+    num_leaves: 31
+    min_child_samples: 40
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_alpha: 0.1
+    reg_lambda: 0.1
+    objective: "regression"
+    early_stopping_rounds: 50
+  lstm:
+    sequence_length: 21
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+    epochs: 30
+    batch_size: 64
+    learning_rate: 0.001
+    early_stopping_patience: 6
+
+backtest:
+  initial_capital: 1_000_000
+  transaction_cost_bps: 5       # per trade, one-way
+  slippage_bps: 2                # per trade, one-way
+  signal_to_position: "quantile"  # "quantile" or "sign" or "zscore_scaled"
+  long_quantile: 0.8            # go long top 20% of predicted-return cross-section
+  short_quantile: 0.2           # go short bottom 20%
+  allow_short: true
+  vol_target_annual: 0.15       # target annualized portfolio vol via position scaling
+  vol_lookback: 21
+  max_position_weight: 0.35     # cap on any single name's absolute weight
+  rebalance_frequency: "daily"
+
+reporting:
+  risk_free_rate_annual: 0.04
+  output_dir: "artifacts"

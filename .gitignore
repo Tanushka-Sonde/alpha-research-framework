@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+data_cache/*.parquet
+artifacts/*
+!artifacts/.gitkeep
+.streamlit/
+.DS_Store
+*.egg-info/
